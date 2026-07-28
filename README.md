@@ -59,42 +59,74 @@ A comprehensive full-stack solution for managing, monitoring, and analyzing CCTV
     └── analytics.js         # Analytics endpoints
 ```
 
-## Installation
+## Quick Start (5 Minutes)
 
 ### Prerequisites
 - Node.js (v16+)
-- MongoDB (local or Atlas)
 - npm or yarn
 
 ### Setup
 
-1. **Clone the repository**
-```bash
-git clone <repository-url>
-cd CCTV-Surveillance-Streaming-and-Management-System
-```
-
-2. **Install dependencies**
+1. **Install dependencies**
 ```bash
 npm install
 ```
 
-3. **Configure environment variables**
-```bash
-cp .env.example .env
-# Edit .env with your configuration
+2. **Configure MongoDB** - Choose one option:
+
+#### Option A: MongoDB Atlas (Recommended - Easiest)
+- Go to https://www.mongodb.com/cloud/atlas
+- Create FREE account
+- Create free cluster (wait ~10 minutes)
+- Click "Connect" → "Drivers" → Copy connection string
+- Edit `.env` and update:
+```
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/cctv-surveillance?retryWrites=true&w=majority
 ```
 
-4. **Start the server**
+#### Option B: Local MongoDB (Windows)
+- Download from https://www.mongodb.com/try/download/community
+- Run installer, select "Install MongoDB as Service"
+- MongoDB starts automatically
+- `.env` already configured for local:
+```
+MONGODB_URI=mongodb://localhost:27017/cctv-surveillance
+```
+
+#### Option C: Docker
 ```bash
-# Development (with auto-reload)
+docker-compose up -d
 npm run dev
-
-# Production
-npm start
 ```
 
-The server will run on `http://localhost:5000`
+3. **Start the server**
+```bash
+npm run dev
+```
+
+Server runs on: `http://localhost:5000`
+
+### Verify Setup
+```bash
+# Test in browser or curl:
+curl http://localhost:5000/api/health
+
+# Should return:
+# {"status":"Server is running","timestamp":"2024-01-XX..."}
+```
+
+### Environment Variables
+Create `.env` file (or copy from `.env.example`):
+```
+MONGODB_URI=mongodb://localhost:27017/cctv-surveillance
+JWT_SECRET=your_super_secret_key_change_this_in_production
+JWT_EXPIRY=7d
+PORT=5000
+NODE_ENV=development
+CORS_ORIGIN=http://localhost:3000
+MAX_FILE_SIZE=52428800
+UPLOAD_DIR=./uploads
+```
 
 ## API Documentation
 
@@ -277,6 +309,31 @@ UPLOAD_DIR=./uploads
 - **Operator**: Camera management, recording control, alert acknowledgment
 - **Viewer**: View-only access to cameras and recordings
 
+## First Time Setup - Create Admin User
+
+Once server is running, register a user:
+
+### Using cURL
+```bash
+curl -X POST http://localhost:5000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"name\": \"Admin User\",
+    \"email\": \"admin@cctv.com\",
+    \"password\": \"admin123\",
+    \"role\": \"admin\"
+  }"
+```
+
+### Using Postman
+1. Import `postman-collection.json` into Postman
+2. Go to Authentication → Register User
+3. Send request
+4. Copy token from response
+5. Set token as Postman variable
+
+Response includes JWT token - save for future API requests.
+
 ## WebSocket Events
 
 ### Client to Server
@@ -301,12 +358,43 @@ npm test
 npm run lint
 ```
 
-### Adding New Features
+### Test API
+```bash
+npm run test-api
+```
 
-1. Create model if needed in `/models`
-2. Create routes in `/routes`
-3. Add middleware if authentication needed
-4. Update documentation
+### Server Commands
+```bash
+npm run dev      # Development with auto-reload
+npm start        # Production mode
+npm test         # Run tests
+npm run lint     # Run linter
+```
+
+### Troubleshooting
+
+**Cannot connect to MongoDB:**
+- Verify MongoDB is running
+- Check MONGODB_URI in .env is correct
+- If using Atlas, ensure IP whitelist includes your current IP (use 0.0.0.0/0 for testing)
+
+**Port 5000 already in use:**
+- Change PORT in .env to different number (e.g., 5001)
+- Or kill process using port 5000
+
+**Module not found errors:**
+- Run: `npm install` again
+- Delete node_modules: `rm -r node_modules` then `npm install`
+
+**Invalid JWT token:**
+- Ensure token from login/register response is used
+- Token format: `Authorization: Bearer <token>`
+- Tokens expire based on JWT_EXPIRY setting
+
+**Server won't start:**
+- Check Node.js version: `node --version` (should be v16+)
+- Check dependencies installed: `npm list`
+- Check for syntax errors: `npm run lint`
 
 ## Future Enhancements
 

@@ -45,10 +45,26 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 // Database connection
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/cctv-surveillance');
-    console.log('MongoDB connected successfully');
+    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/cctv-surveillance', {
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+    });
+    console.log('✅ MongoDB connected successfully');
   } catch (error) {
-    console.error('MongoDB connection error:', error);
+    console.error('❌ MongoDB connection error:', error.message);
+    console.log('\n⚠️  IMPORTANT: MongoDB is not running!');
+    console.log('\nQuick setup options:');
+    console.log('1. Use MongoDB Atlas (Recommended):');
+    console.log('   - Sign up at https://www.mongodb.com/cloud/atlas');
+    console.log('   - Create a free cluster');
+    console.log('   - Update MONGODB_URI in .env with your connection string\n');
+    console.log('2. Install MongoDB locally:');
+    console.log('   - Download from https://www.mongodb.com/try/download/community');
+    console.log('   - Start MongoDB service\n');
+    console.log('3. Use Docker:');
+    console.log('   - Run: docker-compose up -d');
+    console.log('   - Then: npm run dev\n');
+    console.log('See SETUP_GUIDE.md for detailed instructions\n');
     process.exit(1);
   }
 };
