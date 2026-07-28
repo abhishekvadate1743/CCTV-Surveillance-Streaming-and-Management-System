@@ -126,12 +126,81 @@ A comprehensive full-stack solution for managing, monitoring, and analyzing CCTV
 - **Recording**: Video recording metadata and storage
 - **Analytics**: Event detection and analysis logs
 
+## Python Services (Phase 3+)
+
+For advanced features like video streaming and AI analytics, Python services are used alongside Node.js backend.
+
+### Setup Python Environment
+
+**Windows (Automated):**
+```bash
+setup-venv.bat
+```
+
+**Windows (PowerShell):**
+```powershell
+.\setup-venv.ps1
+```
+
+**Manual (All OS):**
+```bash
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+venv\Scripts\activate.bat # Windows CMD
+pip install -r requirements.txt
+```
+
+### Available Python Services
+
+1. **Stream Service** (`services/stream_service.py`)
+   - RTSP to HLS conversion
+   - Video streaming via HTTP
+   - WebSocket support
+   - Port: 5001
+
+2. **Analytics Service** (`services/analytics_service.py`)
+   - Motion detection
+   - Person detection (YOLO)
+   - Vehicle detection (YOLO)
+   - Intrusion detection
+   - Event processing
+
+### Running Python Services
+
+```bash
+# Activate virtual environment first
+venv\Scripts\activate.bat
+
+# Run stream service
+python services/stream_service.py
+
+# In another terminal, run analytics
+python services/analytics_service.py
+```
+
+### Python Dependencies
+
+See `requirements.txt` for complete list:
+- Flask: Web framework
+- Flask-CORS: CORS support
+- OpenCV: Video processing
+- TensorFlow: ML models
+- YOLO: Object detection
+- NumPy, SciPy: Scientific computing
+- MongoDB: Database driver
+- Redis: Caching
+- Celery: Task queue
+
 ## Project Structure
 
 ```
 ├── server.js                 # Main application entry point
 ├── package.json              # Dependencies and scripts
 ├── .env.example              # Environment variables template
+├── .env.python.example       # Python services environment template
+├── requirements.txt          # Python dependencies
+├── setup-venv.bat            # Windows batch setup script
+├── setup-venv.ps1            # Windows PowerShell setup script
 ├── middleware/
 │   ├── auth.js              # JWT verification and authorization
 │   └── errorHandler.js      # Global error handling
@@ -140,12 +209,26 @@ A comprehensive full-stack solution for managing, monitoring, and analyzing CCTV
 │   ├── Camera.js            # Camera configuration schema
 │   ├── Recording.js         # Recording metadata schema
 │   └── Analytics.js         # Event analytics schema
-└── routes/
-    ├── auth.js              # Authentication endpoints
-    ├── cameras.js           # Camera management endpoints
-    ├── recordings.js        # Recording management endpoints
-    ├── users.js             # User management endpoints
-    └── analytics.js         # Analytics endpoints
+├── routes/
+│   ├── auth.js              # Authentication endpoints
+│   ├── cameras.js           # Camera management endpoints
+│   ├── recordings.js        # Recording management endpoints
+│   ├── users.js             # User management endpoints
+│   └── analytics.js         # Analytics endpoints
+├── services/                # Python microservices
+│   ├── stream_service.py    # Video streaming service
+│   └── analytics_service.py # AI/ML analytics service
+├── frontend/                # React dashboard
+│   ├── src/
+│   │   ├── pages/           # All application pages
+│   │   ├── components/      # React components
+│   │   ├── context/         # React context
+│   │   ├── services/        # API client
+│   │   ├── App.jsx
+│   │   └── main.jsx
+│   ├── package.json
+│   └── vite.config.js
+└── README.md                # This file
 ```
 
 ## Quick Start (5 Minutes)
@@ -153,15 +236,48 @@ A comprehensive full-stack solution for managing, monitoring, and analyzing CCTV
 ### Prerequisites
 - Node.js (v16+)
 - npm or yarn
+- Python 3.9+ (for Phase 3+ features)
 
 ### Setup
 
 1. **Install dependencies**
 ```bash
 npm install
+cd frontend
+npm install
+cd ..
 ```
 
-2. **Configure MongoDB** - Choose one option:
+2. **Setup Python Virtual Environment (Optional - for future phases)**
+
+#### Option A: Windows (CMD)
+```bash
+setup-venv.bat
+```
+
+#### Option B: Windows (PowerShell)
+```powershell
+.\setup-venv.ps1
+```
+
+#### Option C: Manual Setup (All OS)
+```bash
+# Create virtual environment
+python -m venv venv
+
+# Activate virtual environment
+# Windows CMD:
+venv\Scripts\activate.bat
+# Windows PowerShell:
+.\venv\Scripts\Activate.ps1
+# Linux/Mac:
+source venv/bin/activate
+
+# Install Python dependencies
+pip install -r requirements.txt
+```
+
+3. **Configure MongoDB** - Choose one option:
 
 #### Option A: MongoDB Atlas (Recommended - Easiest)
 - Go to https://www.mongodb.com/cloud/atlas
@@ -194,6 +310,22 @@ npm run dev
 ```
 
 Server runs on: `http://localhost:5000`
+
+4. **Start Frontend (in new terminal)**
+```bash
+cd frontend
+npm run dev
+```
+
+Frontend runs on: `http://localhost:3000`
+
+5. **[Optional] Start Python Services**
+```bash
+# Activate venv first (see Setup Step 2)
+python services/stream_service.py
+```
+
+Stream service runs on: `http://localhost:5001`
 
 ### Verify Setup
 ```bash
