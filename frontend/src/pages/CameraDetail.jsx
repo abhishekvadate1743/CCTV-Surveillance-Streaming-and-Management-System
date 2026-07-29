@@ -16,6 +16,7 @@ import {
 } from '@mui/icons-material'
 import { AuthContext } from '../context/AuthContext'
 import VideoPlayer from '../components/VideoPlayer'
+import AlertPanel from '../components/AlertPanel'
 import api from '../services/api'
 
 const CameraDetail = () => {
@@ -440,6 +441,14 @@ const CameraDetail = () => {
           </TableContainer>
         </Paper>
       )}
+
+      {/* Phase 4: Analytics & Alerts */}
+      <Paper elevation={1} sx={{ p: 2, mt: 3, backgroundColor: '#f9f9f9' }}>
+        <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold', color: '#1976d2' }}>
+          Phase 4: Advanced Analytics & Alerts
+        </Typography>
+        <AlertPanel cameraId={id} />
+      </Paper>
 
       {/* Events/Analytics */}
       {analytics.length > 0 && (
