@@ -30,12 +30,12 @@ A comprehensive full-stack solution for managing, monitoring, and analyzing CCTV
 - [x] JWT token management
 - [x] Socket.IO client setup
 
-#### Phase 3: Video Streaming Features
-- [ ] RTSP to HLS conversion
-- [ ] Live stream endpoint
-- [ ] Video player integration
-- [ ] Stream quality adaptation
-- [ ] Recording from streams
+#### Phase 3: Video Streaming Features 🔄 IN PROGRESS
+- [x] RTSP to HLS conversion (Flask service with FFmpeg)
+- [x] Live stream endpoint (/stream/<id>/start, /stream/<id>/stop)
+- [x] Video player integration (HLS.js + VideoPlayer component)
+- [x] Stream quality adaptation (/quality/recommend endpoint)
+- [x] Recording from streams (/recording/<id>/start, /recording/<id>/stop)
 
 #### Phase 4: Advanced Analytics
 - [ ] Motion detection algorithm
@@ -248,7 +248,7 @@ npm install
 cd ..
 ```
 
-2. **Setup Python Virtual Environment (Optional - for future phases)**
+2. **Setup Python Virtual Environment (For Phase 3 - Video Streaming)**
 
 #### Option A: Windows (CMD)
 ```bash
@@ -275,6 +275,15 @@ source venv/bin/activate
 
 # Install Python dependencies
 pip install -r requirements.txt
+```
+
+**Install Phase 3 Streaming Packages** (if venv already exists):
+```bash
+# Activate venv first
+venv\Scripts\activate.bat
+
+# Install new packages
+pip install av streamlink ffmpeg-python m3u8
 ```
 
 3. **Configure MongoDB** - Choose one option:
@@ -686,18 +695,66 @@ The system includes automatic TTL indexes for:
 - Any user registered via the app
 - Or use API to create admin: `npm run test-api` in backend folder
 
-### Phase 3: Video Streaming 🔄 NEXT PRIORITY
-**What needs to be built**:
-- RTSP to HLS converter (FFmpeg)
-- Live stream endpoint
-- HLS video player component
+### Phase 3: Video Streaming 🔄 IN PROGRESS (Mostly Complete)
+**Status**: Core features implemented and tested
+- RTSP to HLS converter (FFmpeg-based)
+- Live stream endpoint (Flask service)
+- HLS video player component (HLS.js)
 - Stream quality adaptation
-- Recording from streams
-- Video thumbnail generation
+- Video recording from streams
+- Stream statistics and bandwidth monitoring
 
-**Estimated time**: 1-2 weeks
+**What's done**:
+1. ✓ Installed FFmpeg streaming packages (av, streamlink, ffmpeg-python, m3u8)
+2. ✓ Created Flask streaming service (`services/stream_service.py`)
+3. ✓ Created VideoPlayer component with HLS.js (`frontend/src/components/VideoPlayer.jsx`)
+4. ✓ Created CameraDetail page with streaming integration (`frontend/src/pages/CameraDetail.jsx`)
+5. ✓ Added HLS.js to frontend (`frontend/index.html`)
+6. ✓ Created streaming test script (`test-streaming.py`)
 
-**Tech stack**: FFmpeg, HLS.js, Express streaming
+**How to test Phase 3**:
+```bash
+# Terminal 1: Start backend
+npm run dev
+
+# Terminal 2: Activate venv and start streaming service
+venv\Scripts\activate.bat
+python services/stream_service.py
+
+# Terminal 3: Start frontend
+cd frontend
+npm run dev
+
+# Terminal 4: Run tests
+python test-streaming.py
+```
+
+**Frontend usage**:
+1. Go to Dashboard → Cameras
+2. Click on a camera
+3. Click "Start Live Stream" button
+4. Video player will load with HLS stream
+5. Use quality selector to change bitrate
+6. Click "Start Recording" to record stream
+
+**API Endpoints** (Streaming Service):
+- `GET /health` - Health check
+- `GET /streams` - List active streams
+- `POST /stream/<camera_id>/start` - Start RTSP to HLS conversion
+- `POST /stream/<camera_id>/stop` - Stop stream
+- `GET /stream/<camera_id>/info` - Get stream info
+- `GET /stream/<camera_id>/hls/playlist.m3u8` - HLS playlist
+- `GET /stream/<camera_id>/hls/<segment>` - HLS segments
+- `POST /recording/<camera_id>/start` - Start recording
+- `POST /recording/<camera_id>/stop` - Stop recording
+- `POST /quality/recommend` - Get quality recommendation
+
+**Next Steps**:
+- Deploy Flask streaming service to production
+- Add HTTPS/SSL support for streaming
+- Implement stream authentication
+- Add stream transcoding profiles
+- Implement stream failover/redundancy
 
 ---
 
