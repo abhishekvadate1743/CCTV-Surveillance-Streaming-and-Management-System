@@ -1,0 +1,102 @@
+filebeat.inputs:
+  - type: container
+    enabled: true
+    paths:
+      - '/var/lib/docker/containers/*/*.log'
+    processors:
+      - add_kubernetes_metadata:
+          host: ${NODE_NAME}
+          matchers:
+            - logs_path:
+                logs_path: "/var/lib/docker/containers/"
+      - add_docker_metadata: ~
+      - add_process_metadata: ~
+
+  # Backend service logs
+  - type: log
+    enabled: true
+    paths:
+      - '/var/log/cctv/backend/*.log'
+    fields:
+      service: backend
+      environment: production
+    multiline.pattern: '^\['
+    multiline.negate: true
+    multiline.match: after
+
+  # Streaming service logs
+  - type: log
+    enabled: true
+    paths:
+      - '/var/log/cctv/streaming/*.log'
+    fields:
+      service: streaming
+      environment: production
+    multiline.pattern: '^\['
+    multiline.negate: true
+    multiline.match: after
+
+  # Analytics service logs
+  - type: log
+    enabled: true
+    paths:
+      - '/var/log/cctv/analytics/*.log'
+    fields:
+      service: analytics
+      environment: production
+    multiline.pattern: '^\['
+    multiline.negate: true
+    multiline.match: after
+
+  # MongoDB logs
+  - type: log
+    enabled: true
+    paths:
+      - '/var/log/cctv/mongodb/*.log'
+    fields:
+      service: mongodb
+      environment: production
+
+  # Application logs
+  - type: log
+    enabled: true
+    paths:
+      - '/var/log/cctv/app/*.log'
+    fields:
+      service: application
+      environment: production
+
+processors:
+  - add_host_metadata:
+      when.not.contains.tags: forwarded
+  - add_cloud_metadata: ~
+  - add_docker_metadata: ~
+  - add_kubernetes_metadata: ~
+  - decode_json_fields:
+      fields: ["message"]
+      target: ""
+      overwrite_keys: true
+
+cloud.id: ${CLOUD_ID}
+cloud.auth: ${CLOUD_AUTH}
+
+output.elasticsearch:
+  hosts: ["${ELASTICSEARCH_HOST:elasticsearch:9200}"]
+  username: ${ELASTICSEARCH_USERNAME:elastic}
+  password: ${ELASTICSEARCH_PASSWORD:changeme}
+  protocol: "http"
+  
+  # Index naming
+  index: "cctv-logs-%{+yyyy.MM.dd}"
+  
+  # ILM (Index Lifecycle Management) settings
+  lifecycle.name: cctv-logs-policy
+  lifecycle.rollover_alias: "cctv-logs"
+
+logging.level: info
+logging.to_files: true
+logging.files:
+  path: /var/log/filebeat
+  name: filebeat
+  keepfiles: 7
+  permissions: 0644

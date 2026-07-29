@@ -1,26 +1,151 @@
-version: '3.8'
+version: '3.9'
 
 services:
+  # MongoDB Database
   mongodb:
-    image: mongo:7.0
+    image: mongo:7.0-alpine
     container_name: cctv-mongodb
     restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-password123}
+      MONGO_INITDB_DATABASE: cctv-surveillance
     ports:
       - "27017:27017"
-    environment:
-      MONGO_INITDB_DATABASE: cctv-surveillance
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: password123
     volumes:
       - mongodb_data:/data/db
       - mongodb_config:/data/configdb
+    networks:
+      - cctv-network
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 40s
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: cctv-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - cctv-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: cctv-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      MONGODB_URI: mongodb://admin:${MONGO_PASSWORD:-password123}@mongodb:27017/cctv-surveillance?authSource=admin
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
+      REDIS_URL: redis://redis:6379
+      CORS_ORIGIN: http://localhost:3000
+    ports:
+      - "5000:5000"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - cctv-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Streaming Service
+  streaming:
+    build:
+      context: .
+      dockerfile: Dockerfile.streaming
+    container_name: cctv-streaming
+    restart: unless-stopped
+    environment:
+      FLASK_ENV: production
+      FLASK_PORT: 5001
+    ports:
+      - "5001:5001"
+    volumes:
+      - ./hls:/app/hls
+      - ./recordings:/app/recordings
+      - ./logs:/app/logs
+    networks:
+      - cctv-network
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Analytics Service
+  analytics:
+    build:
+      context: .
+      dockerfile: Dockerfile.analytics
+    container_name: cctv-analytics
+    restart: unless-stopped
+    environment:
+      FLASK_ENV: production
+      ANALYTICS_PORT: 5002
+    ports:
+      - "5002:5002"
+    volumes:
+      - ./alerts:/app/alerts
+      - ./detections:/app/detections
+      - ./logs:/app/logs
+    networks:
+      - cctv-network
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: cctv-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - cctv-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
   mongodb_data:
   mongodb_config:
+  redis_data:
+
+networks:
+  cctv-network:
+    driver: bridge

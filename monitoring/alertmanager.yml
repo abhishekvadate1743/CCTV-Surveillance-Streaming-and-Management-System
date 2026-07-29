@@ -1,0 +1,102 @@
+global:
+  resolve_timeout: 5m
+  slack_api_url: '${SLACK_WEBHOOK_URL:}'
+
+# The root route with all parameters, which are inherited by the child routes if they are not overwritten.
+route:
+  receiver: 'default'
+  group_by: ['alertname', 'cluster', 'service']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  
+  # Child routes for specific alert types
+  routes:
+    - match:
+        severity: critical
+      receiver: 'critical-alerts'
+      group_wait: 0s
+      group_interval: 1m
+      repeat_interval: 30m
+    
+    - match:
+        severity: warning
+      receiver: 'warning-alerts'
+      group_wait: 10s
+      group_interval: 5m
+      repeat_interval: 2h
+    
+    - match:
+        alertname: ServiceDown
+      receiver: 'critical-alerts'
+      group_wait: 0s
+      repeat_interval: 30m
+    
+    - match:
+        alertname: HighErrorRate
+      receiver: 'warning-alerts'
+      repeat_interval: 1h
+    
+    - match:
+        alertname: HighCpuUsage
+      receiver: 'warning-alerts'
+      repeat_interval: 30m
+
+inhibit_rules:
+  # Inhibit warning/info if critical alert exists
+  - source_match:
+      severity: 'critical'
+    target_match_re:
+      severity: 'warning|info'
+    equal: ['alertname', 'dev', 'instance']
+  
+  # Inhibit info if warning alert exists
+  - source_match:
+      severity: 'warning'
+    target_match:
+      severity: 'info'
+    equal: ['alertname', 'dev', 'instance']
+
+receivers:
+  - name: 'default'
+    slack_configs:
+      - channel: '#cctv-alerts'
+        title: 'Alert: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+        send_resolved: true
+  
+  - name: 'critical-alerts'
+    slack_configs:
+      - channel: '#cctv-critical'
+        title: '🔴 CRITICAL: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+        send_resolved: true
+    pagerduty_configs:
+      - service_key: '${PAGERDUTY_KEY:}'
+        description: 'CCTV Alert: {{ .GroupLabels.alertname }}'
+    email_configs:
+      - to: '${ALERT_EMAIL:alert@example.com}'
+        from: '${EMAIL_FROM:alertmanager@cctv.local}'
+        smarthost: '${EMAIL_HOST:smtp.gmail.com:587}'
+        auth_username: '${EMAIL_USERNAME:}'
+        auth_password: '${EMAIL_PASSWORD:}'
+        headers:
+          Subject: '🔴 CRITICAL ALERT: {{ .GroupLabels.alertname }}'
+  
+  - name: 'warning-alerts'
+    slack_configs:
+      - channel: '#cctv-warnings'
+        title: '⚠️ WARNING: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+        send_resolved: true
+    email_configs:
+      - to: '${ALERT_EMAIL:alert@example.com}'
+        from: '${EMAIL_FROM:alertmanager@cctv.local}'
+        smarthost: '${EMAIL_HOST:smtp.gmail.com:587}'
+        auth_username: '${EMAIL_USERNAME:}'
+        auth_password: '${EMAIL_PASSWORD:}'
+        headers:
+          Subject: '⚠️ WARNING: {{ .GroupLabels.alertname }}'
+
+# Templates for custom message formatting
+templates: []

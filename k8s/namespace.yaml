@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cctv
+  labels:
+    name: cctv
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cctv-secrets
+  namespace: cctv
+type: Opaque
+stringData:
+  mongodb-uri: "mongodb://admin:password123@mongodb:27017/cctv-surveillance?authSource=admin"
+  jwt-secret: "your-production-jwt-secret-key"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cctv-config
+  namespace: cctv
+data:
+  NODE_ENV: "production"
+  FLASK_ENV: "production"
+  LOG_LEVEL: "info"

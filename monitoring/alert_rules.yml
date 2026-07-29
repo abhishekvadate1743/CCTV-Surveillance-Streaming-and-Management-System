@@ -1,0 +1,95 @@
+# Alert Rules
+groups:
+  - name: cctv-alerts
+    interval: 30s
+    rules:
+      # Backend alerts
+      - alert: BackendDown
+        expr: up{job="cctv-backend"} == 0
+        for: 2m
+        annotations:
+          summary: "Backend service is down"
+          description: "Backend service has been unreachable for 2 minutes"
+
+      - alert: HighBackendErrorRate
+        expr: rate(http_requests_total{job="cctv-backend",status=~"5.."}[5m]) > 0.05
+        for: 5m
+        annotations:
+          summary: "High error rate on backend"
+          description: "Backend error rate is above 5%"
+
+      - alert: HighBackendLatency
+        expr: histogram_quantile(0.95, http_request_duration_seconds{job="cctv-backend"}) > 1
+        for: 5m
+        annotations:
+          summary: "High latency on backend"
+          description: "95th percentile latency is above 1 second"
+
+      # Streaming service alerts
+      - alert: StreamingDown
+        expr: up{job="cctv-streaming"} == 0
+        for: 2m
+        annotations:
+          summary: "Streaming service is down"
+          description: "Streaming service has been unreachable for 2 minutes"
+
+      - alert: HighActiveStreams
+        expr: streaming_active_streams > 20
+        for: 5m
+        annotations:
+          summary: "High number of active streams"
+          description: "More than 20 concurrent streams detected"
+
+      # Analytics service alerts
+      - alert: AnalyticsDown
+        expr: up{job="cctv-analytics"} == 0
+        for: 2m
+        annotations:
+          summary: "Analytics service is down"
+          description: "Analytics service has been unreachable for 2 minutes"
+
+      - alert: HighUnacknowledgedAlerts
+        expr: analytics_unacknowledged_alerts > 100
+        for: 10m
+        annotations:
+          summary: "High number of unacknowledged alerts"
+          description: "More than 100 unacknowledged alerts in system"
+
+      # Database alerts
+      - alert: MongoDBDown
+        expr: up{job="mongodb"} == 0
+        for: 1m
+        annotations:
+          summary: "MongoDB is down"
+          description: "MongoDB has been unreachable for 1 minute"
+
+      - alert: HighDatabaseConnections
+        expr: mongodb_connections{state="current"} > 80
+        for: 5m
+        annotations:
+          summary: "High database connection usage"
+          description: "Database connections above 80 connections"
+
+      # Memory alerts
+      - alert: HighMemoryUsage
+        expr: container_memory_usage_bytes{name=~"cctv.*"} / 1024 / 1024 / 1024 > 0.8
+        for: 5m
+        annotations:
+          summary: "High memory usage detected"
+          description: "Container memory usage is above 80%"
+
+      # CPU alerts
+      - alert: HighCPUUsage
+        expr: rate(container_cpu_usage_seconds_total{name=~"cctv.*"}[5m]) > 0.8
+        for: 5m
+        annotations:
+          summary: "High CPU usage detected"
+          description: "Container CPU usage is above 80%"
+
+      # Disk alerts
+      - alert: DiskSpaceRunningOut
+        expr: node_filesystem_avail_bytes / node_filesystem_size_bytes < 0.1
+        for: 5m
+        annotations:
+          summary: "Low disk space"
+          description: "Disk space is below 10%"
